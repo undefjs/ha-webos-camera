@@ -1,0 +1,14 @@
+{
+    "domain": "webos_camera",
+    "name": "LG WebOS Camera",
+    "codeowners": [],
+    "config_flow": true,
+    "dependencies": [],
+    "documentation": "https://github.com/undefjs/ha-webos-camera",
+    "iot_class": "local_polling",
+    "issue_tracker": "https://github.com/undefjs/ha-webos-camera/issues",
+    "requirements": [
+        "asyncssh"
+    ],
+    "version": "1.0.0"
+}

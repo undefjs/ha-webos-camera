@@ -7,7 +7,8 @@
                 "data": {
                     "host": "Host",
                     "username": "Username",
-                    "password": "Password",
+                    "password": "Password (optional if using key file)",
+                    "key_file": "SSH Key File Path (e.g., /config/lgtv_id_rsa)",
                     "scan_interval": "Refresh Interval (seconds)"
                 }
             }

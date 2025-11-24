@@ -14,7 +14,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .const import DEFAULT_PORT
+from .const import DEFAULT_PORT, CONF_KEY_FILE
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,10 +26,11 @@ async def async_setup_entry(
     """Set up the WebOS Camera from a config entry."""
     host = entry.data[CONF_HOST]
     username = entry.data[CONF_USERNAME]
-    password = entry.data[CONF_PASSWORD]
+    password = entry.data.get(CONF_PASSWORD)
+    key_file = entry.data.get(CONF_KEY_FILE)
     interval = entry.data[CONF_SCAN_INTERVAL]
 
-    async_add_entities([WebOSCamera(host, username, password, interval, entry.title)])
+    async_add_entities([WebOSCamera(host, username, password, key_file, interval, entry.title)])
 
 
 class WebOSCamera(Camera):
@@ -37,12 +38,13 @@ class WebOSCamera(Camera):
 
     _attr_supported_features = CameraEntityFeature.ON_OFF
 
-    def __init__(self, host, username, password, interval, name):
+    def __init__(self, host, username, password, key_file, interval, name):
         """Initialize the camera."""
         super().__init__()
         self._host = host
         self._username = username
         self._password = password
+        self._key_file = key_file
         self._attr_name = name
         self._attr_unique_id = f"webos_camera_{host}"
         self._interval = interval
@@ -54,7 +56,7 @@ class WebOSCamera(Camera):
         self._cmd = (
             "luna-send -n 1 -f luna://com.webos.service.capture/executeOneShot "
             "'{\"path\":\"/tmp/webos_cam.png\", \"method\":\"DISPLAY\", \"format\":\"PNG\", \"width\":960, \"height\":540}' "
-            "&& base64 /tmp/webos_cam.png "
+            "&& base64 /tmp/webos_cam.png | grep -A100 '^iVBOR' | tr -d '\n' "
             "&& rm /tmp/webos_cam.png"
         )
 
@@ -67,14 +69,21 @@ class WebOSCamera(Camera):
 
         try:
             if self._conn is None:
-                self._conn = await asyncssh.connect(
-                    self._host,
-                    username=self._username,
-                    password=self._password,
-                    known_hosts=None,
-                    port=DEFAULT_PORT,
-                    connect_timeout=5
-                )
+                connect_params = {
+                    "host": self._host,
+                    "username": self._username,
+                    "known_hosts": None,
+                    "port": DEFAULT_PORT,
+                    "connect_timeout": 5
+                }
+                
+                # Use SSH key if provided, otherwise use password
+                if self._key_file:
+                    connect_params["client_keys"] = [self._key_file]
+                else:
+                    connect_params["password"] = self._password
+                
+                self._conn = await asyncssh.connect(**connect_params)
 
             # Run the command
             result = await self._conn.run(self._cmd, check=True)

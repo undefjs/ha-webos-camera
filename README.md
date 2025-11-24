@@ -43,8 +43,12 @@ A Home Assistant custom component that provides a real-time camera feed of your 
 4.  Enter your TV's SSH details:
     -   **Host**: IP address of your TV.
     -   **Username**: Usually `root`.
-    -   **Password**: Your SSH password.
+    -   **Password**: Your SSH password (optional if using SSH key).
+    -   **SSH Key File Path**: Path to your SSH private key file (e.g., `/config/lgtv_id_rsa`). Optional if using password.
     -   **Refresh Interval**: How often to update the image (in seconds).
+
+> [!NOTE]
+> You can use either password authentication OR SSH key authentication. If both are provided, the SSH key will be used.
 
 ## Troubleshooting
 

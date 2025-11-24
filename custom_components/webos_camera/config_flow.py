@@ -13,7 +13,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
 
-from .const import DOMAIN, DEFAULT_PORT, DEFAULT_USERNAME, DEFAULT_INTERVAL
+from .const import DOMAIN, DEFAULT_PORT, DEFAULT_USERNAME, DEFAULT_INTERVAL, CONF_KEY_FILE
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -21,7 +21,8 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_HOST): str,
         vol.Required(CONF_USERNAME, default=DEFAULT_USERNAME): str,
-        vol.Required(CONF_PASSWORD): str,
+        vol.Optional(CONF_PASSWORD): str,
+        vol.Optional(CONF_KEY_FILE): str,
         vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_INTERVAL): int,
     }
 )
@@ -29,15 +30,26 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
 async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
     """Validate the user input allows us to connect."""
     
+    # Validate that either password or key_file is provided
+    if not data.get(CONF_PASSWORD) and not data.get(CONF_KEY_FILE):
+        raise ValueError("Either password or key_file must be provided")
+    
     try:
-        async with asyncssh.connect(
-            data[CONF_HOST],
-            username=data[CONF_USERNAME],
-            password=data[CONF_PASSWORD],
-            known_hosts=None,
-            port=DEFAULT_PORT,
-            connect_timeout=5
-        ) as conn:
+        connect_params = {
+            "host": data[CONF_HOST],
+            "username": data[CONF_USERNAME],
+            "known_hosts": None,
+            "port": DEFAULT_PORT,
+            "connect_timeout": 5
+        }
+        
+        # Use SSH key if provided, otherwise use password
+        if data.get(CONF_KEY_FILE):
+            connect_params["client_keys"] = [data[CONF_KEY_FILE]]
+        else:
+            connect_params["password"] = data[CONF_PASSWORD]
+        
+        async with asyncssh.connect(**connect_params) as conn:
             # Try a simple command to verify
             await conn.run("echo hello", check=True)
     except (OSError, asyncssh.Error) as err:

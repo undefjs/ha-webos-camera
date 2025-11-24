@@ -56,7 +56,7 @@ class WebOSCamera(Camera):
         self._cmd = (
             "luna-send -n 1 -f luna://com.webos.service.capture/executeOneShot "
             "'{\"path\":\"/tmp/webos_cam.png\", \"method\":\"DISPLAY\", \"format\":\"PNG\", \"width\":960, \"height\":540}' "
-            "&& base64 /tmp/webos_cam.png | grep -A100 '^iVBOR' | tr -d '\n' "
+            "&& base64 /tmp/webos_cam.png | grep -A100 '^iVBOR' | tr -d '\\n' "
             "&& rm /tmp/webos_cam.png"
         )
 
@@ -86,7 +86,21 @@ class WebOSCamera(Camera):
                 self._conn = await asyncssh.connect(**connect_params)
 
             # Run the command
-            result = await self._conn.run(self._cmd, check=True)
+            result = await self._conn.run(self._cmd, check=False)
+            
+            # Log command result for debugging
+            _LOGGER.debug("Command stdout: %s", result.stdout)
+            _LOGGER.debug("Command stderr: %s", result.stderr)
+            _LOGGER.debug("Command exit status: %s", result.exit_status)
+            
+            if result.exit_status != 0:
+                _LOGGER.error(
+                    "Command failed with exit status %s. Stdout: %s, Stderr: %s",
+                    result.exit_status,
+                    result.stdout,
+                    result.stderr
+                )
+                return None
             
             # Decode base64
             image_data = base64.b64decode(result.stdout.strip())

@@ -12,7 +12,7 @@ async def run_test(host, password):
             print("Connected!")
             
             cmd = (
-                "luna-send -n 1 -f luna://com.webos.service.capture/executeOneShot "
+                "luna-send -n 1 -f luna://com.webos.service.tv.capture/executeOneShot "
                 "'{\"path\":\"/tmp/webos_cam.png\", \"method\":\"DISPLAY\", \"format\":\"PNG\", \"width\":960, \"height\":540}' "
                 "&& base64 /tmp/webos_cam.png "
                 "&& rm /tmp/webos_cam.png"

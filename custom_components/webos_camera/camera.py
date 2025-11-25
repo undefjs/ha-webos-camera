@@ -55,8 +55,8 @@ class WebOSCamera(Camera):
         # We use a unique filename to avoid collisions if multiple instances run (though unlikely on same TV)
         self._cmd = (
             "luna-send -n 1 -f luna://com.webos.service.tv.capture/executeOneShot "
-            "'{\"path\":\"/tmp/webos_cam.png\", \"method\":\"DISPLAY\", \"format\":\"PNG\", \"width\":960, \"height\":540}' "
-            "&& base64 /tmp/webos_cam.png | grep -A100 '^iVBOR' | tr -d '\\n' "
+            "'{\"path\":\"/tmp/webos_cam.png\", \"method\":\"DISPLAY\", \"format\":\"PNG\", \"width\":960, \"height\":540}' > /dev/null "
+            "&& base64 /tmp/webos_cam.png | tr -d '\\n' "
             "&& rm /tmp/webos_cam.png"
         )
 
